@@ -3,9 +3,9 @@ import telebot
 from telebot import types
 from vk_api.exceptions import ApiError
 
-vk_token = 'vk1.a.bXH0LjlHgWjwIuWSZYRM9VopiDDed5BScKza449ZXsX6ojFysGSSKwiAK8pVyvb4LmJN0500GBuLLZjm8dvRO15yFP788_poxiMntJAvMtLbFgUe4XTQtqXneD8kv47ZICXPLtDv091HOk3e2gFy-qYLAUwyeQ9UAj94BbXNpVycqbaU2VdyVAIpRDUTKPKAVIL_BCS0hBU21UNkEoicoA'
+vk_token = 'xxxxxx'
 
-telegram_token = '6071992423:AAG__T6Inbu3zIO69Ca9jAYfO5m3nhtg49g'
+telegram_token = 'xxxxxx'
 channel_id = '-1001616800841'
 
 vk_session = vk_api.VkApi(token=vk_token)
