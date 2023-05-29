@@ -1,266 +1,50 @@
-import json
-import time
-import youtube_dl
-import aiohttp
-import requests
-from auth_data import token
-import os
-import re
-import asyncio
-import vkapi
-from pytube import YouTube
-import subprocess
-import ffmpeg
-# bruh_video
-# everydaygosling
+import vk_api
+import telebot
+from telebot import types
+from vk_api.exceptions import ApiError
 
+vk_token = 'vk1.a.bXH0LjlHgWjwIuWSZYRM9VopiDDed5BScKza449ZXsX6ojFysGSSKwiAK8pVyvb4LmJN0500GBuLLZjm8dvRO15yFP788_poxiMntJAvMtLbFgUe4XTQtqXneD8kv47ZICXPLtDv091HOk3e2gFy-qYLAUwyeQ9UAj94BbXNpVycqbaU2VdyVAIpRDUTKPKAVIL_BCS0hBU21UNkEoicoA'
 
+telegram_token = '6071992423:AAG__T6Inbu3zIO69Ca9jAYfO5m3nhtg49g'
+channel_id = '-1001616800841'
 
-async def get_wall_posts(group_name):
+vk_session = vk_api.VkApi(token=vk_token)
+vk = vk_session.get_api()
+bot = telebot.TeleBot(telegram_token)
 
+group_ids = {
+    'Group 1': -188192816,
+    'Group 2': -203927743,
+    'Group 3': -214871449
+}
 
-    url = f'https://api.vk.com/method/wall.get?domain={group_name}&count=20&access_token={token}&v=5.81'
+@bot.message_handler(commands=['start'])
+def start_message(message):
+    bot.reply_to(message, 'Привет! Я бот, который будет парсить публикации из ВКонтакте и отправлять их в Телеграм-канал.')
+
+@bot.message_handler(commands=['parse'])
+def parse_vk_posts(message):
     try:
-        req = requests.get(url)
-    except Exception:
-        print('shit conn')
-    src = req.json()
+        group_id = -124024643
+        response = vk.wall.get(owner_id=group_id, count=10)
+        posts = response['items']
 
-    posts = src['response']['items']
-    fresh_posts_id = []
-    for fresh_post_id in posts:
-        fresh_post_id=fresh_post_id['id']
-        fresh_posts_id.append(fresh_post_id)
-        print(fresh_post_id)
+        # Парсим информацию из каждого поста
+        for post in posts:
+            text = post.get('text')
+            attachments = post.get('attachments', [])
 
-    if os.path.exists(f'{group_name}'):
-        print(f'directory {group_name} already exists!')
-    else:
-            os.mkdir(group_name)
-    if not os.path.exists(f'{group_name}/exists_posts_{group_name}.txt'):
-        print('no files such that ID','creating')
-        postedyet = []
+            if text:
+                bot.send_message(channel_id, text)
 
+            for attachment in attachments:
+                if attachment['type'] == 'photo':
+                    photo_url = attachment['photo']['sizes'][-1]['url']
+                    bot.send_photo(channel_id, photo_url)
 
-    else:
-        print("we've just found this file ,starting filtring posts now")
-        postedyet = []
-        with open(f'{group_name}/exists_posts_{group_name}.txt', 'r') as file:
-            for line in file:
-                number = line.strip()
-                postedyet.append(int(number))
-        print(postedyet)
+        bot.reply_to(message, 'Публикации успешно отправлены в Телеграм-канал.')
 
+    except ApiError as e:
+        bot.reply_to(message, f'Ошибка при парсинге публикаций ВКонтакте: {e}')
 
-
-
-
-
-    # for post in posts:
-
-
-
-
-
-    for post in posts:
-        time.sleep(1)
-        post_id = post['id']
-        if post_id in postedyet:
-            print('такой пост уже обработан и отправлен')
-            continue
-        else:
-            print('\n')
-            print('send post ID ',post_id)
-
-            try:
-                text = post['text']
-                text = re.sub(r'\[club\d+\|', '', text).replace(']', '')
-
-                print(text)
-                if 'attachments' in post:
-                    # функция для сохранения изображений
-                    def download_img(url, post_id, group_name):
-                        res = requests.get(url)
-
-                        # создаем папку group_name/files
-                        if not os.path.exists(f"{group_name}/files"):
-                            os.mkdir(f"{group_name}/files")
-
-                        with open(f"{group_name}/files/{post_id}.jpg", "wb") as img_file:
-                            img_file.write(res.content)
-
-                    def download_video(url, post_id, group_name):
-                        # создаем папку group_name/files
-                        if not os.path.exists(f"{group_name}/video_files"):
-                            os.mkdir(f"{group_name}/video_files")
-
-
-                        try:
-                            output_path = f"{group_name}/video_files/{post_id}"
-                            ydl_opts = {"outtmpl": f"{group_name}/video_files/{post_id}.%(ext)s",
-                                        "format": "mp4"
-
-                                        }
-                            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                                video_info = ydl.extract_info(url, download=False)
-                                video_duration = video_info["duration"]
-                                if video_duration > 300:
-                                    print("Видео слишком долгое")
-                                else:
-                                    print(f"Видео длится {video_duration} секунд. Сохраняем видео...")
-                                    ydl.download([url])
-                        except Exception:
-                            print("Не удалось скачать видео...")
-
-
-                # everydaygosling
-
-
-                    post=post['attachments']
-                    if len(post) ==1:
-
-                            if post[0]['type'] == 'photo':
-                                photo_post_count =0
-                                post_photo =post[0]['photo']
-                                # print(post_photo)
-                                sizes=post_photo['sizes']
-                                # print('блок sizes')
-                                # print(sizes,type(sizes))
-                                # print('\n\n')
-                                maxresolve=[]
-                                # print('блок size1')
-                                for size in sizes:
-                                    # print(size,type(size))
-                                    width=size['width']
-                                    # print(width)
-                                    maxresolve.append(int(width))
-                                # print(maxresolve)
-                                maxresolve=str(max(maxresolve))
-                                # print(maxresolve)
-                                # print('блок size2')
-                                for size in sizes:
-                                    url=size['url']
-                                    if f'{str(maxresolve)}x' in url:
-                                        post_photo=url
-                                        print(post_photo)
-                                        download_img(post_photo,post_id,group_name)
-                                        break
-                            elif post[0]['type'] == 'video':
-                                print("Видео пост")
-
-                                # формируем данные для составления запроса на получение ссылки на видео
-                                video_access_key = post[0]["video"]["access_key"]
-                                video_post_id = post[0]["video"]["id"]
-                                video_owner_id = post[0]["video"]["owner_id"]
-
-                                video_get_url = f"https://api.vk.com/method/video.get?videos={video_owner_id}_{video_post_id}_{video_access_key}&access_token={token}&v=5.81"
-
-                                async def fetch_data(url):
-                                    async with aiohttp.ClientSession() as session:
-                                        async with session.get(url) as response:
-                                            response_json = await response.json()
-                                            return response_json
-                                res = await fetch_data(video_get_url)
-
-                                video_url = res["response"]["items"][0]["player"]
-                                print(video_url)
-                                download_video(video_url, post_id, group_name)
-                            else:print('link or audio')
-                    else:
-                            for post_item_photo in post:
-                                    # print(post_item_photo)
-                                photo_post_count = 0
-                                if post_item_photo["type"] == "photo":
-                                        post_photo = post_item_photo['photo']
-                                        # print(post_photo)
-
-                                        sizes = post_photo['sizes']
-                                        # print('блок sizes')
-                                        # print(sizes,type(sizes))
-                                        # print('\n\n')
-                                        maxresolve = []
-                                        # print('блок size1')
-                                        for size in sizes:
-                                            # print(size,type(size))
-                                            width = size['width']
-                                            # print(width)
-                                            maxresolve.append(int(width))
-                                        # print(maxresolve)
-                                        maxresolve = str(max(maxresolve))
-                                        # print(maxresolve)
-                                        # print('блок size2')
-                                        for size in sizes:
-                                            url = size['url']
-                                            if f'{str(maxresolve)}x' in url:
-                                                post_photo=url
-                                                print(post_photo)
-                                                photo_post_count += 1
-                                                photo_post_counter=str(post_id)+photo_post_count
-                                                download_img(post_photo,photo_post_counter,post_id)
-                                                break
-
-                                elif post[0]['type'] == 'video':
-                                    print("Видео пост")
-
-                                    # формируем данные для составления запроса на получение ссылки на видео
-                                    video_access_key = post[0]["video"]["access_key"]
-                                    video_post_id = post[0]["video"]["id"]
-                                    video_owner_id = post[0]["video"]["owner_id"]
-
-                                    video_get_url = f"https://api.vk.com/method/video.get?videos={video_owner_id}_{video_post_id}_{video_access_key}&access_token={token}&v=5.81"
-
-                                    async def fetch_data(url):
-                                        async with aiohttp.ClientSession() as session:
-                                            async with session.get(url) as response:
-                                                response_json = await response.json()
-                                                return response_json
-
-                                    res = await fetch_data(video_get_url)
-                                    photo_post_count += 1
-                                    photo_post_counter = str(post_id) + photo_post_count
-                                    video_url = res["response"]["items"][0]["player"]
-                                    print(video_url)
-                                    download_video(video_url,photo_post_counter,group_name)
-                                else:print('link or audio')
-
-
-                else:
-                    print('нет вложений')
-            except Exception:
-                print('чтото не так ')
-
-
-
-
-    with open(f'{group_name}/exists_posts_{group_name}.txt', 'w') as file:
-            for item in fresh_posts_id:
-                file.write(str(item)+'\n')
-
-async def main():
-    group_name = input('введите название группы:')
-    await get_wall_posts(group_name)
-
-
-if __name__ == "__main__":
-        asyncio.run(main())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# if __name__ == '__main__':
-
-
+bot.polling()
