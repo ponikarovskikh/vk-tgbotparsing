@@ -15,8 +15,8 @@ import linksfile
 # everydaygosling
 bot = telebot.TeleBot(TOKEN)
 channel_id = '-1001616800841'
-group_names = ['avemariika', 'hihigs_and_filials', 'justputin2024', 'oguzoksphilosophy', 'everydaygosling', 'e_memasik']
-
+# group_names = ['avemariika', 'hihigs_and_filials', 'justputin2024', 'oguzoksphilosophy', 'everydaygosling', 'e_memasik']
+group_names=['fullgop']
 groups=[]
 async def bot1():
 
@@ -25,6 +25,34 @@ async def bot1():
     def start(message):
         bot.send_message(chat_id=message.chat.id,
                          text="Привет! Я бот, который может получить фотографии из ссылок. Просто введите команду /parse и ссылку на фото.")
+
+    @bot.message_handler(commands=['add'])
+    def start1(message):
+        link=message.text.split(' ')
+        link=link[-1]
+        if link not in group_names:
+            group_names.append(link)
+            bot.send_message(chat_id=message.chat.id,
+                             text=f"{link} добавлена в список групп ")
+        else:
+            bot.send_message(chat_id=message.chat.id,
+                             text=f"упс, {link} уже имеется в список групп ")
+
+    @bot.message_handler(commands=['delete'])
+    def start3(message):
+        link = message.text.split(' ')
+        link = link[-1]
+        if link not in group_names:
+            group_names.append(link)
+            bot.send_message(chat_id=message.chat.id,
+                             text=f"{link} нету в списке групп ")
+        else:
+            group_names.remove(link)
+            bot.send_message(chat_id=message.chat.id,
+                             text=f" {link} уже удалена из списка ")
+
+
+
 
     links = []
 
@@ -68,7 +96,7 @@ async def bot1():
     def download_img_and_video_send(chat_id):
         for group_name in group_names:
             # group_name='everydaygosling'
-            url = f'https://api.vk.com/method/wall.get?domain={group_name}&count=5&access_token={token}&v=5.81'
+            url = f'https://api.vk.com/method/wall.get?domain={group_name}&count=30&access_token={token}&v=5.81'
             try:
                 req = requests.get(url)
                 src = req.json()
@@ -262,6 +290,5 @@ if __name__ == "__main__":
 
 
 
-# if __name__ == '__main__':
 
 
