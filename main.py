@@ -8,19 +8,15 @@ import os
 import re
 import asyncio
 import telebot
-from auth_data import TOKEN
-import linksfile
 
 # bruh_video
 # everydaygosling
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot('xxxx')
 channel_id = '-1001616800841'
 # group_names = ['avemariika', 'hihigs_and_filials', 'justputin2024', 'oguzoksphilosophy', 'everydaygosling', 'e_memasik']
-group_names=['fullgop']
+group_names=['fullgop', 'avemariika']
 groups=[]
 async def bot1():
-
-
     @bot.message_handler(commands=['start'])
     def start(message):
         bot.send_message(chat_id=message.chat.id,
